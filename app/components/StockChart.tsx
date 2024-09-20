@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useEffect, useState, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, { useMemo, useEffect, useState, forwardRef } from 'react';
 import { 
   Chart as ChartJS, 
   CategoryScale,
@@ -15,7 +15,7 @@ import {
   ChartData, 
   ScatterDataPoint 
 } from 'chart.js';
-import { Chart } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
 import { enUS } from 'date-fns/locale';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -47,30 +47,12 @@ interface StockChartProps {
 
 type ChartPoint = ScatterDataPoint & { x: number; y: number | null; originalY: number | null };
 
-export interface StockChartRef {
-  updateChart: () => void;
-}
-
-const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChart(
+const StockChart = forwardRef<HTMLDivElement, StockChartProps>(function StockChart(
   { data, symbols, startDate, endDate, showTooltip },
   ref
 ) {
   const [chartHeight, setChartHeight] = useState('500px');
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const chartRef = useRef<ChartJS<"line", ChartPoint[], unknown> | null>(null);
-
-  useImperativeHandle(ref, () => ({
-    updateChart: () => {
-      if (chartRef.current) {
-        chartRef.current.update();
-      }
-    }
-  }));
-
-  const updateChartHeight = useCallback(() => {
-    const windowHeight = window.innerHeight;
-    setChartHeight(`${windowHeight * 0.7}px`);
-  }, []);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -78,6 +60,11 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
 
     const handleChange = (e: MediaQueryListEvent) => {
       setIsDarkMode(e.matches);
+    };
+
+    const updateChartHeight = () => {
+      const windowHeight = window.innerHeight;
+      setChartHeight(`${windowHeight * 0.7}px`);
     };
 
     updateChartHeight();
@@ -88,18 +75,17 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
       window.removeEventListener('resize', updateChartHeight);
       mediaQuery.removeEventListener('change', handleChange);
     };
-  }, [updateChartHeight]);
+  }, []);
 
   const chartData: ChartData<'line', ChartPoint[]> = useMemo(() => {
     if (!data || data.length === 0 || !symbols || symbols.length === 0) {
-      return { labels: [], datasets: [] };
+      return { datasets: [] };
     }
 
     const startTimestamp = new Date(startDate).getTime();
     const endTimestamp = new Date(endDate).getTime();
 
     return {
-      labels: [],
       datasets: data.map((stockData, index) => {
         const symbol = symbols[index];
         const isExchangeRate = symbol === 'USDJPY=X';
@@ -152,8 +138,6 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
         enabled: showTooltip,
         mode: 'index',
         intersect: false,
-        caretPadding: 100,
-        caretSize: 0,
         callbacks: {
           label: function(context) {
             const label = context.dataset.label || '';
@@ -175,8 +159,6 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
         backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
         titleColor: isDarkMode ? '#fff' : '#666',
         bodyColor: isDarkMode ? '#fff' : '#666',
-        padding: 10,
-        displayColors: false,
       },
       zoom: {
         pan: {
@@ -229,8 +211,6 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
         grid: {
           color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         },
-        min: new Date(startDate).getTime(),
-        max: new Date(endDate).getTime(),
       },
       'y-percent': {
         type: 'linear',
@@ -252,9 +232,6 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
         },
         grid: {
           color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-          lineWidth: (context) => context.tick.value === 0 ? 2 : 1,
-          zeroLineWidth: 2,
-          zeroLineColor: isDarkMode ? '#FFFFFF' : '#000000',
         },
       },
       'y-exchange': {
@@ -287,31 +264,21 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
     },
   }), [isDarkMode, startDate, endDate, showTooltip]);
 
-  useEffect(() => {
-    if (chartRef.current) {
-      chartRef.current.data = chartData;
-      chartRef.current.options = options;
-      chartRef.current.update('none');
-    }
-  }, [chartData, options]);
-
   if (!data || data.length === 0 || !symbols || symbols.length === 0) {
     return <div>No data available to display</div>;
   }
 
   return (
-    <div className="w-full rounded-lg p-5 relative" style={{ 
+    <div ref={ref} style={{ 
+      width: '100%', 
       height: chartHeight, 
       backgroundColor: isDarkMode ? '#333' : '#fff',
+      padding: '20px',
+      borderRadius: '8px',
     }}>
-      <Chart
-        ref={chartRef}
-        type="line"
-        data={chartData}
-        options={options}
-      />
+      <Line data={chartData} options={options} />
     </div>
   );
 });
 
-export default React.memo(StockChart);
+export default StockChart;
