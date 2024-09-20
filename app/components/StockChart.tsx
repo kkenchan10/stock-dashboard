@@ -152,8 +152,8 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
         enabled: showTooltip,
         mode: 'index',
         intersect: false,
-        caretPadding: 100, // ツールチップとポインタの間の距離を増やす
-        caretSize: 0, // ツールチップの矢印を非表示にする
+        caretPadding: 100,
+        caretSize: 0,
         callbacks: {
           label: function(context) {
             const label = context.dataset.label || '';
@@ -175,8 +175,8 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
         backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
         titleColor: isDarkMode ? '#fff' : '#666',
         bodyColor: isDarkMode ? '#fff' : '#666',
-        padding: 10, // ツールチップ内部のパディングを増やす
-        displayColors: false, // カラーボックスを非表示にする
+        padding: 10,
+        displayColors: false,
       },
       zoom: {
         pan: {
@@ -300,13 +300,9 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
   }
 
   return (
-    <div style={{ 
-      width: '100%', 
+    <div className="w-full rounded-lg p-5 relative" style={{ 
       height: chartHeight, 
       backgroundColor: isDarkMode ? '#333' : '#fff',
-      padding: '20px',
-      borderRadius: '8px',
-      position: 'relative',
     }}>
       <Chart
         ref={chartRef}
@@ -318,4 +314,4 @@ const StockChart = forwardRef<StockChartRef, StockChartProps>(function StockChar
   );
 });
 
-export default StockChart;
+export default React.memo(StockChart);
